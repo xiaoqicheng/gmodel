@@ -2,9 +2,9 @@ package gmodel
 
 import (
 	"fmt"
-	"github.com/gorm-model/gmodel/color"
-	"github.com/gorm-model/gmodel/parser"
 	"github.com/spf13/cobra"
+	"github.com/xiaoqicheng/gmodel/color"
+	"github.com/xiaoqicheng/gmodel/parser"
 	"os"
 	"strings"
 	"sync"

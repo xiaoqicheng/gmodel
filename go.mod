@@ -1,4 +1,4 @@
-module github.com/gorm-model/gmodel
+module github.com/xiaoqicheng/gmodel
 
 go 1.18
 
