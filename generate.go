@@ -78,7 +78,6 @@ func getOptions(args ModelOptions) []parser.Option {
 // GenerateModel .
 func generateModel() {
 	//判断mysql连接是否为空参数
-	fmt.Println(modelArgs.MysqlDsn)
 	if modelArgs.MysqlDsn == "" {
 		exitWithInfo("miss mysql conn, please add a configuration")
 	}
