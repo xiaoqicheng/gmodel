@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"unicode"
 )
 
 // initParamsFlags .
@@ -127,13 +126,7 @@ func generateModel() {
 func createModelFile(tableName, tablePrefix, filePath string) (*os.File, bool) {
 	fileName := tableName
 	if modelArgs.TablePrefix != "" && strings.HasPrefix(fileName, tablePrefix) {
-		tableNameTemp := fileName[len(tablePrefix):]
-		for _, v := range tableNameTemp {
-			if !unicode.IsNumber(v) {
-				fileName = tableNameTemp
-			}
-			break
-		}
+		fileName = fileName[len(tablePrefix):]
 	}
 
 	fileAddress := filePath + "/" + fileName + ".go"
