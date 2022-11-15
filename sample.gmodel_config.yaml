@@ -1,0 +1,10 @@
+# 配置添加
+gmodel:
+  dsn: username:password@tcp(host:port)/database?charset=utf8&parseTime=True&loc=Asia%2FShanghai
+  table: '*'
+  pkg: internal
+  with_table: true
+  output_path: './dao/internal'
+  table_prefix: tbl_
+  json_tag: true
+  gorm_type: true
