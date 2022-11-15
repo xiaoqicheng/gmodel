@@ -27,7 +27,8 @@ func initParamsFlags(modelCmd *cobra.Command) {
 	modelCmd.Flags().BoolVar(&modelArgs.ForceTableName, "with-tablename", true, "write TableName func force")
 	modelCmd.Flags().StringVarP(&modelArgs.MysqlDsn, "db-dsn", "d", confOption.MysqlDsn, "mysql dsn([user]:[pass]@tcp(host)/[database][?charset=xxx&...])")
 	modelCmd.Flags().StringVarP(&modelArgs.MysqlTable, "db-table", "t", confOption.MysqlTable, "mysql table name")
-	modelCmd.Flags().BoolVarP(&modelArgs.Update, "update", "u", false, "if true update all table struct")
+	modelCmd.Flags().BoolVarP(&modelArgs.Update, "update", "u", false, "update table struct switch -t/-f ")
+	modelCmd.Flags().BoolVarP(&modelArgs.Force, "force", "f", false, "force update all table struct switch -f ")
 }
 
 // getOptions .
@@ -137,7 +138,7 @@ func createModelFile(tableName, tablePrefix, filePath string) (*os.File, bool) {
 
 	fileAddress := filePath + "/" + fileName + ".go"
 	//判断 -update 参数 是否存在 是 则不判断; 否 则判断文件是否存在; -u  -t 更新某个表model
-	if modelArgs.Update == false {
+	if modelArgs.Update == false || modelArgs.Force == false {
 		//如果文件存在 则 跳过
 		if ok, _ := pathExists(fileAddress); ok {
 			fmt.Println(color.Cyan("model已存在 [" + tableName + "]"))

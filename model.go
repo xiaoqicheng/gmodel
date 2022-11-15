@@ -24,6 +24,7 @@ type ModelOptions struct {
 	NoNullType     bool   `json:"-"`
 	NullStyle      string `json:"-"`
 	Update         bool   `json:"-"`
+	Force          bool   `json:"-"`
 }
 
 var modelArgs = ModelOptions{}
