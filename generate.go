@@ -116,8 +116,8 @@ func createModelFile(tableName, tablePrefix, filePath string) (*os.File, bool) {
 	}
 
 	fileAddress := filePath + "/" + fileName + ".go"
-	//判断 -update 参数 是否存在 是 则不判断; 否 则判断文件是否存在; -u  -t 更新某个表model
-	if modelArgs.Update == false || modelArgs.Enforcement == false {
+	//判断 -update 参数 是否存在 是 则不判断; 否 则判断文件是否存在; -u -t 更新某个表model; -u -e 更新全部表model
+	if modelArgs.Update == false {
 		//如果文件存在 则 跳过
 		if ok, _ := pathExists(fileAddress); ok {
 			fmt.Println(color.Cyan("model已存在 [" + tableName + "]"))
