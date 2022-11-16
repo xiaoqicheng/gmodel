@@ -24,7 +24,8 @@ type ModelOptions struct {
 	NoNullType     bool   `json:"-"`
 	NullStyle      string `json:"-"`
 	Update         bool   `json:"-"`
-	Force          bool   `json:"-"`
+	Enforcement    bool   `json:"-"`
+	JudgeUnsigned  bool   `json:"-" mapstructure:"unsigned"` //是否判断无符号 若为TRUE 则生成 uint类型; FALSE 为 int; default false
 }
 
 var modelArgs = ModelOptions{}
@@ -59,19 +60,19 @@ func (f optionFunc) apply(o *options) {
 	f(o)
 }
 
-func WithGModelPath(path string) Option {
+func WithGModelConfPath(path string) Option {
 	return optionFunc(func(o *options) {
 		o.Path = path
 	})
 }
 
-func WithGModelName(name string) Option {
+func WithGModelConfName(name string) Option {
 	return optionFunc(func(o *options) {
 		o.Name = name
 	})
 }
 
-func WithGModelType(t string) Option {
+func WithGModelConfType(t string) Option {
 	return optionFunc(func(o *options) {
 		o.Type = t
 	})
@@ -100,9 +101,9 @@ func InitGModelConf(opts ...Option) (*GModelsConf, error) {
 func (conf *GModelsConf) NewGModelCmd() *cobra.Command {
 	conf.parseConfig()
 	var modelCmd = &cobra.Command{
-		Use:          "model",
+		Use:          "gmodel",
 		Short:        "generate model",
-		Example:      "根据数据表自动生成model",
+		Example:      "gmodel -t",
 		SilenceUsage: true,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			modelTip()

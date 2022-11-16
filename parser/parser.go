@@ -90,12 +90,12 @@ func ParseSQLToWrite(sql string, writer io.Writer, options ...Option) error {
 }
 
 // ConfigureAcronym .
-func ConfigureAcronym(words []string) {
+/*func ConfigureAcronym(words []string) {
 	acronym = make(map[string]struct{}, len(words))
 	for _, w := range words {
 		acronym[strings.ToUpper(w)] = struct{}{}
 	}
-}
+}*/
 
 // tmplData .
 type tmplData struct {
@@ -232,7 +232,7 @@ func makeCode(stmt *ast.CreateTableStmt, opt options) (string, []string, error) 
 		if !canNull {
 			styleNull = NullDisable
 		}
-		goType, pkg := mysqlToGoType(col.Tp, styleNull)
+		goType, pkg := mysqlToGoType(col.Tp, styleNull, opt.JudgeUnsigned)
 		if pkg != "" {
 			importPath = append(importPath, pkg)
 		}
@@ -254,7 +254,7 @@ func makeCode(stmt *ast.CreateTableStmt, opt options) (string, []string, error) 
 }
 
 // mysqlToGoType .
-func mysqlToGoType(colTp *types.FieldType, style NullStyle) (name string, path string) {
+func mysqlToGoType(colTp *types.FieldType, style NullStyle, judgeUnsigned bool) (name string, path string) {
 	if style == NullInSQL {
 		path = "database/sql"
 		path = "database/sql"
@@ -270,8 +270,6 @@ func mysqlToGoType(colTp *types.FieldType, style NullStyle) (name string, path s
 			name = "sql.NullString"
 		case mysql.TypeTimestamp, mysql.TypeDatetime, mysql.TypeDate:
 			name = "sql.NullTime"
-		//case mysql.TypeDecimal, mysql.TypeNewDecimal:
-		//	name = "sql.NullString"
 		case mysql.TypeJSON:
 			name = "sql.NullString"
 		default:
@@ -280,19 +278,17 @@ func mysqlToGoType(colTp *types.FieldType, style NullStyle) (name string, path s
 	} else {
 		switch colTp.Tp {
 		case mysql.TypeTiny, mysql.TypeShort, mysql.TypeInt24, mysql.TypeLong:
-			/*if mysql.HasUnsignedFlag(colTp.Flag) {
+			if mysql.HasUnsignedFlag(colTp.Flag) && judgeUnsigned {
 				name = "uint"
 			} else {
 				name = "int"
-			}*/
-			name = "int"
+			}
 		case mysql.TypeLonglong:
-			/*if mysql.HasUnsignedFlag(colTp.Flag) {
+			if mysql.HasUnsignedFlag(colTp.Flag) && judgeUnsigned {
 				name = "uint64"
 			} else {
 				name = "int64"
-			}*/
-			name = "int64"
+			}
 		case mysql.TypeFloat, mysql.TypeDouble:
 			name = "float64"
 		case mysql.TypeDecimal, mysql.TypeNewDecimal:
@@ -304,13 +300,12 @@ func mysqlToGoType(colTp *types.FieldType, style NullStyle) (name string, path s
 		case mysql.TypeTimestamp, mysql.TypeDatetime, mysql.TypeDate:
 			path = "time"
 			name = "time.Time"
-		//case mysql.TypeDecimal, mysql.TypeNewDecimal:
-		//	name = "string"
 		case mysql.TypeJSON:
 			name = "string"
 		default:
 			return "UnSupport", ""
 		}
+
 		if style == NullInPointer {
 			name = "*" + name
 		}

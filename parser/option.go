@@ -29,6 +29,7 @@ type options struct {
 	Package        string    `json:"-"`
 	GormType       bool      `json:"-"`
 	ForceTableName bool      `json:"-"`
+	JudgeUnsigned  bool      `json:"-"`
 }
 
 // defaultOptions .
@@ -104,6 +105,13 @@ func WithGormType() Option {
 func WithForceTableName() Option {
 	return func(o *options) {
 		o.ForceTableName = true
+	}
+}
+
+// WithJudgeUnsigned .
+func WithJudgeUnsigned() Option {
+	return func(o *options) {
+		o.JudgeUnsigned = true
 	}
 }
 

@@ -1,6 +1,7 @@
 package gmodel
 
 import (
+	"flag"
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/xiaoqicheng/gmodel/color"
@@ -26,8 +27,9 @@ func initParamsFlags(modelCmd *cobra.Command) {
 	modelCmd.Flags().BoolVar(&modelArgs.ForceTableName, "with-tablename", true, "write TableName func force")
 	modelCmd.Flags().StringVarP(&modelArgs.MysqlDsn, "db-dsn", "d", confOption.MysqlDsn, "mysql dsn([user]:[pass]@tcp(host)/[database][?charset=xxx&...])")
 	modelCmd.Flags().StringVarP(&modelArgs.MysqlTable, "db-table", "t", confOption.MysqlTable, "mysql table name")
-	modelCmd.Flags().BoolVarP(&modelArgs.Update, "update", "u", false, "update table struct switch -t/-f ")
-	modelCmd.Flags().BoolVarP(&modelArgs.Force, "force", "f", false, "force update all table struct switch -f ")
+	modelCmd.Flags().BoolVarP(&modelArgs.Update, "update", "u", false, "update table struct switch -t/-e")
+	modelCmd.Flags().BoolVarP(&modelArgs.Enforcement, "enforcement", "e", false, "enforcement update all table struct switch -e")
+	modelCmd.Flags().BoolVar(&modelArgs.JudgeUnsigned, "unsigned", false, "Whether to determine an unsigned type")
 }
 
 // getOptions .
@@ -72,34 +74,21 @@ func getOptions(args ModelOptions) []parser.Option {
 	if args.ForceTableName {
 		opt = append(opt, parser.WithForceTableName())
 	}
+
+	if args.JudgeUnsigned {
+		opt = append(opt, parser.WithJudgeUnsigned())
+	}
 	return opt
 }
 
 // GenerateModel .
 func generateModel() {
+
+	judgeUpdateArgs()
 	//判断mysql连接是否为空参数
-	if modelArgs.MysqlDsn == "" {
-		exitWithInfo("miss mysql conn, please add a configuration")
-	}
-
+	judgeMysqlDsnIsNull()
 	//sql 获取顺序为： -s > -f > "自动获取"
-	if modelArgs.SQL == "" {
-		if modelArgs.InputFile != "" {
-			b, err := os.ReadFile(modelArgs.InputFile)
-			if err != nil {
-				exitWithInfo("read %s failed, %s\n", modelArgs.InputFile, err)
-			}
-			modelArgs.SQL = string(b)
-		}
-	}
-
-	//如果指定 sql 语句；则 -t 必须存在， -t 存在 sql 不一定存在;  不支持 一个 sql 多个table的用法
-	if modelArgs.SQL != "" {
-		if modelArgs.MysqlTable == "" || modelArgs.MysqlTable == "*" {
-			exitWithInfo("you need use -t for a table name")
-		}
-		return
-	}
+	judgeMysqlSqlWithTable()
 
 	// 获取即将生成的表结构的所有表
 	tables, err := parser.GetCreateTables(modelArgs.MysqlDsn, modelArgs.MysqlTable)
@@ -109,16 +98,13 @@ func generateModel() {
 
 	// 已存在的表不在更新， 只新增不存在的表， 除非使用 更新命令
 	wg := &sync.WaitGroup{}
-	//ch := make(chan struct{}, runtime.NumCPU())
 	for _, table := range tables {
 		wg.Add(1)
-		//ch <- struct{}{}
 		go writeModelFile(table, modelArgs.SQL, wg)
 	}
 
 	wg.Wait()
-	usageStr := color.Blue(`success`)
-	fmt.Printf("%s \n", usageStr)
+	fmt.Printf("%s \n", color.Blue(`success`))
 	return
 }
 
@@ -131,7 +117,7 @@ func createModelFile(tableName, tablePrefix, filePath string) (*os.File, bool) {
 
 	fileAddress := filePath + "/" + fileName + ".go"
 	//判断 -update 参数 是否存在 是 则不判断; 否 则判断文件是否存在; -u  -t 更新某个表model
-	if modelArgs.Update == false || modelArgs.Force == false {
+	if modelArgs.Update == false || modelArgs.Enforcement == false {
 		//如果文件存在 则 跳过
 		if ok, _ := pathExists(fileAddress); ok {
 			fmt.Println(color.Cyan("model已存在 [" + tableName + "]"))
@@ -228,4 +214,43 @@ func modelTip() {
 func exitWithInfo(format string, a ...interface{}) {
 	_, _ = fmt.Fprintf(os.Stderr, format+"\n", a...)
 	os.Exit(1)
+}
+
+//judgeUpdateArgs 判断 update 命令是否配合 -t / -e
+func judgeUpdateArgs() {
+	if modelArgs.Update {
+		if !modelArgs.Enforcement && (modelArgs.MysqlTable == "" || modelArgs.MysqlTable == "*") {
+			_, _ = fmt.Fprintf(os.Stderr, "no table or enforcement input(-t|-e)\n\n")
+			flag.Usage()
+			os.Exit(2)
+		}
+	}
+}
+
+//judgeMysqlDsnIsNull 判断 dsn 连接是否为空
+func judgeMysqlDsnIsNull() {
+	if modelArgs.MysqlDsn == "" {
+		exitWithInfo("miss mysql conn, please add a configuration")
+	}
+}
+
+//judgeMysqlSqlWithTable 获取sql 并 判断 sql 是否配合-t使用
+func judgeMysqlSqlWithTable() {
+	if modelArgs.SQL == "" {
+		if modelArgs.InputFile != "" {
+			b, err := os.ReadFile(modelArgs.InputFile)
+			if err != nil {
+				exitWithInfo("read %s failed, %s\n", modelArgs.InputFile, err)
+			}
+			modelArgs.SQL = string(b)
+		}
+	}
+
+	//如果指定 sql 语句；则 -t 必须存在， -t 存在 sql 不一定存在;  不支持 一个 sql 多个table的用法
+	if modelArgs.SQL != "" {
+		if modelArgs.MysqlTable == "" || modelArgs.MysqlTable == "*" {
+			exitWithInfo("you need use -t for a table name")
+		}
+		return
+	}
 }
