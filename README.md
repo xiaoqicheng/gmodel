@@ -20,15 +20,16 @@ It supports:
 
 ```yaml
 gmodel:
-  dsn: username:password@tcp(host:port)/database?charset=utf8&parseTime=True&loc=Asia%2FShanghai
-  table: '*'
-  pkg: internal   #要生成model所属包名
-  with_table: true
-  output_path: './dao/internal'  #输出model文件目录
-  table_prefix: tbl_
-  json_tag: true
-  gorm_type: true
-  unsigned: false #若为TRUE 则生成 uint类型; FALSE 为 int; default false```
+  default:
+    dsn: username:password@tcp(host:port)/database?charset=utf8&parseTime=True&loc=Asia%2FShanghai
+    table: '*'
+    pkg: internal   #要生成model所属包名
+    with_table: true
+    output_path: './dao/internal'  #输出model文件目录
+    table_prefix: tbl_
+    json_tag: true
+    gorm_type: true
+    unsigned: false #若为TRUE 则生成 uint类型; FALSE 为 int; default false
 ```
 
 ### add gmodel command
@@ -55,8 +56,8 @@ func newGModel() *cobra.Command {
 You can use follow commands
 
 ```command
-   create all new table model command
-   > go run main.go gmodel
+   create all new table model command; use "-slm" specified connection, if not used, default
+   > go run main.go gmodel -slm default
     
    create a table model command 
    > go run main.go gmodel -t tablename

@@ -26,10 +26,11 @@ type ModelOptions struct {
 	Update         bool   `json:"-"`
 	Enforcement    bool   `json:"-"`
 	JudgeUnsigned  bool   `json:"-" mapstructure:"unsigned"` //是否判断无符号 若为TRUE 则生成 uint类型; FALSE 为 int; default false
+	SelectMySQL    string `json:"-"`                         //是否指定数据库
 }
 
 var modelArgs = ModelOptions{}
-var confOption = &ModelOptions{}
+var confOption = &map[string]ModelOptions{}
 
 type GModelsConf struct {
 	Path string `json:"path"`
@@ -38,9 +39,10 @@ type GModelsConf struct {
 }
 
 const (
-	defaultPath = "./"
-	defaultName = "gmodel_config"
-	defaultType = "yaml"
+	defaultPath        = "./"
+	defaultName        = "gmodel_config"
+	defaultType        = "yaml"
+	defaultSelectMysql = "default"
 )
 
 type options struct {
@@ -132,6 +134,11 @@ func (conf *GModelsConf) parseConfig() {
 
 	if err := gmviper.UnmarshalKey("gmodel", confOption); err != nil {
 		log.Printf("Parse config.gmodel segment error: %s\n", err)
+		return
+	}
+
+	if _, ok := (*confOption)[defaultSelectMysql]; !ok {
+		log.Printf("Parse config.gmodel.default")
 		return
 	}
 }

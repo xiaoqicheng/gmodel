@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/xiaoqicheng/gmodel/color"
 	"github.com/xiaoqicheng/gmodel/parser"
+	"log"
 	"os"
 	"strings"
 	"sync"
@@ -13,20 +14,31 @@ import (
 
 // initParamsFlags .
 func initParamsFlags(modelCmd *cobra.Command) {
+
+	//判断是否选定连接 -- 如果选定则使用，若没有选定则使用第一个连接
+	modelCmd.Flags().StringVar(&modelArgs.SelectMySQL, "slm", defaultSelectMysql, "table name prefix")
+
+	if _, ok := (*confOption)[modelArgs.SelectMySQL]; !ok {
+		log.Printf("select mysql not exist")
+		return
+	}
+
+	selectMysqlConf := (*confOption)[modelArgs.SelectMySQL]
+
 	modelCmd.Flags().StringVarP(&modelArgs.InputFile, "file", "f", "", "input file")
-	modelCmd.Flags().StringVarP(&modelArgs.OutputPath, "output", "o", confOption.OutputPath, "output path")
+	modelCmd.Flags().StringVarP(&modelArgs.OutputPath, "output", "o", selectMysqlConf.OutputPath, "output path")
 	modelCmd.Flags().StringVarP(&modelArgs.SQL, "sql", "s", "", "input SQL")
-	modelCmd.Flags().BoolVarP(&modelArgs.JSONTag, "json", "j", confOption.JSONTag, "generate json tag")
-	modelCmd.Flags().StringVar(&modelArgs.TablePrefix, "table-prefix", confOption.TablePrefix, "table name prefix")
+	modelCmd.Flags().BoolVarP(&modelArgs.JSONTag, "json", "j", selectMysqlConf.JSONTag, "generate json tag")
+	modelCmd.Flags().StringVar(&modelArgs.TablePrefix, "table-prefix", selectMysqlConf.TablePrefix, "table name prefix")
 	modelCmd.Flags().StringVar(&modelArgs.ColumnPrefix, "col-prefix", "", "column name prefix")
 	modelCmd.Flags().BoolVar(&modelArgs.NoNullType, "no-null", false, "do not use Null type")
 	modelCmd.Flags().StringVar(&modelArgs.NullStyle, "null-style", "",
 		"null type: sql.NullXXX(use 'sql') or *xxx(use 'ptr')")
-	modelCmd.Flags().StringVarP(&modelArgs.Package, "pkg", "p", confOption.Package, "package name, default: model")
-	modelCmd.Flags().BoolVar(&modelArgs.GormType, "with-type", confOption.GormType, "write type in gorm tag")
+	modelCmd.Flags().StringVarP(&modelArgs.Package, "pkg", "p", selectMysqlConf.Package, "package name, default: model")
+	modelCmd.Flags().BoolVar(&modelArgs.GormType, "with-type", selectMysqlConf.GormType, "write type in gorm tag")
 	modelCmd.Flags().BoolVar(&modelArgs.ForceTableName, "with-tablename", true, "write TableName func force")
-	modelCmd.Flags().StringVarP(&modelArgs.MysqlDsn, "db-dsn", "d", confOption.MysqlDsn, "mysql dsn([user]:[pass]@tcp(host)/[database][?charset=xxx&...])")
-	modelCmd.Flags().StringVarP(&modelArgs.MysqlTable, "db-table", "t", confOption.MysqlTable, "mysql table name")
+	modelCmd.Flags().StringVarP(&modelArgs.MysqlDsn, "db-dsn", "d", selectMysqlConf.MysqlDsn, "mysql dsn([user]:[pass]@tcp(host)/[database][?charset=xxx&...])")
+	modelCmd.Flags().StringVarP(&modelArgs.MysqlTable, "db-table", "t", selectMysqlConf.MysqlTable, "mysql table name")
 	modelCmd.Flags().BoolVarP(&modelArgs.Update, "update", "u", false, "update table struct switch -t/-e")
 	modelCmd.Flags().BoolVarP(&modelArgs.Enforcement, "enforcement", "e", false, "enforcement update all table struct switch -e")
 	modelCmd.Flags().BoolVar(&modelArgs.JudgeUnsigned, "unsigned", false, "Whether to determine an unsigned type")
