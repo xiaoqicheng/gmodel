@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"log"
 	"os"
 )
 
@@ -116,7 +115,11 @@ func InitGModelConf(opts ...Option) (*GModelsConf, error) {
 
 // NewGModelCmd 获取一个 gorm model 生成 cmd
 func (conf *GModelsConf) NewGModelCmd() *cobra.Command {
-	conf.parseConfig()
+	if err := conf.parseConfig(); err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	
 	var modelCmd = &cobra.Command{
 		Use:          "gmodel",
 		Short:        "generate model",
@@ -136,25 +139,23 @@ func (conf *GModelsConf) NewGModelCmd() *cobra.Command {
 	return modelCmd
 }
 
-func (conf *GModelsConf) parseConfig() {
+func (conf *GModelsConf) parseConfig() error {
 	gmviper := viper.New()
 	gmviper.AddConfigPath(conf.Path)
 	gmviper.SetConfigName(conf.Name)
 	gmviper.SetConfigType(conf.Type)
 
 	if err := gmviper.ReadInConfig(); err != nil {
-		fmt.Println(fmt.Sprintf("Read  gmodel cmd config file error: %s, so you can not use gmodel cmd", err))
-		//log.Fatalf("Read config file error: %s", err)
-		return
+		return fmt.Errorf("Read  gmodel cmd config file error: %s, so you can not use gmodel cmd", err)
 	}
 
 	if err := gmviper.UnmarshalKey("gmodel", confOption); err != nil {
-		log.Printf("Parse config.gmodel segment error: %s\n", err)
-		return
+		return fmt.Errorf("Parse config.gmodel segment error: %s\n", err)
 	}
 
 	if _, ok := (*confOption)[conf.DefaultMysql]; !ok {
-		log.Printf("Parse config.gmodel.default")
-		return
+		return fmt.Errorf("Parse config.gmodel.default  not exits")
 	}
+
+	return nil
 }
