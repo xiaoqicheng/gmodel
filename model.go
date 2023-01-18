@@ -102,9 +102,10 @@ func InitGModelConf(opts ...Option) (*GModelsConf, error) {
 	}
 
 	return &GModelsConf{
-		Path: options.Path,
-		Name: options.Name,
-		Type: options.Type,
+		Path:         options.Path,
+		Name:         options.Name,
+		Type:         options.Type,
+		DefaultMysql: options.DefaultMysql,
 	}, nil
 }
 
