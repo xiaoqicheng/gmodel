@@ -1,0 +1,11 @@
+# 配置添加
+gmodel:
+  default:
+    dsn: username:password@tcp(host:port)/rencon?charset=utf8&parseTime=True&loc=Asia%2FShanghai
+    table: '*'
+    pkg: internal
+    with_table: true
+    output_path: ''
+    table_prefix:
+    json_tag: true
+    gorm_type: true
