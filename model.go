@@ -1,9 +1,11 @@
 package gmodel
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
+	"os"
 )
 
 // ModelOptions .
@@ -66,7 +68,10 @@ func (f optionFunc) apply(o *options) {
 
 func WithGModelConfPath(path string) Option {
 	return optionFunc(func(o *options) {
-		o.Path = path
+		if path != "" {
+			o.Path = path
+		}
+		o.Path, _ = os.Getwd()
 	})
 }
 
@@ -138,7 +143,8 @@ func (conf *GModelsConf) parseConfig() {
 	gmviper.SetConfigType(conf.Type)
 
 	if err := gmviper.ReadInConfig(); err != nil {
-		log.Fatalf("Read config file error: %s", err)
+		fmt.Println(fmt.Sprintf("Read  gmodel cmd config file error: %s, so you can not use gmodel cmd", err))
+		//log.Fatalf("Read config file error: %s", err)
 		return
 	}
 
