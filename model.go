@@ -117,9 +117,9 @@ func InitGModelConf(opts ...Option) (*GModelsConf, error) {
 func (conf *GModelsConf) NewGModelCmd() *cobra.Command {
 	if err := conf.parseConfig(); err != nil {
 		fmt.Println(err)
-		return nil
+		return &cobra.Command{}
 	}
-	
+
 	var modelCmd = &cobra.Command{
 		Use:          "gmodel",
 		Short:        "generate model",
