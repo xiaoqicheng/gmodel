@@ -33,9 +33,10 @@ var modelArgs = ModelOptions{}
 var confOption = &map[string]ModelOptions{}
 
 type GModelsConf struct {
-	Path string `json:"path"`
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Path         string `json:"path"`
+	Name         string `json:"name"`
+	Type         string `json:"type"`
+	DefaultMysql string `json:"default_mysql"`
 }
 
 const (
@@ -46,9 +47,10 @@ const (
 )
 
 type options struct {
-	Path string `json:"path"`
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Path         string `json:"path"`
+	Name         string `json:"name"`
+	Type         string `json:"type"`
+	DefaultMysql string `json:"default_mysql"`
 }
 
 // Option overrides behavior of conf.
@@ -80,12 +82,19 @@ func WithGModelConfType(t string) Option {
 	})
 }
 
+func WithGModelConfDefaultMysql(selectMysql string) Option {
+	return optionFunc(func(o *options) {
+		o.DefaultMysql = selectMysql
+	})
+}
+
 // InitGModelConf Initialize the configuration file.
 func InitGModelConf(opts ...Option) (*GModelsConf, error) {
 	options := options{
-		Path: defaultPath,
-		Name: defaultName,
-		Type: defaultType,
+		Path:         defaultPath,
+		Name:         defaultName,
+		Type:         defaultType,
+		DefaultMysql: defaultSelectMysql,
 	}
 
 	for _, o := range opts {
@@ -111,12 +120,12 @@ func (conf *GModelsConf) NewGModelCmd() *cobra.Command {
 			modelTip()
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			generateModel()
+			generateModel(conf.DefaultMysql)
 			return nil
 		},
 	}
 
-	initParamsFlags(modelCmd)
+	conf.initParamsFlags(modelCmd)
 
 	return modelCmd
 }
@@ -137,7 +146,7 @@ func (conf *GModelsConf) parseConfig() {
 		return
 	}
 
-	if _, ok := (*confOption)[defaultSelectMysql]; !ok {
+	if _, ok := (*confOption)[conf.DefaultMysql]; !ok {
 		log.Printf("Parse config.gmodel.default")
 		return
 	}

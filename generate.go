@@ -3,45 +3,43 @@ package gmodel
 import (
 	"flag"
 	"fmt"
-	"github.com/spf13/cobra"
 	"github.com/xiaoqicheng/gmodel/color"
 	"github.com/xiaoqicheng/gmodel/parser"
-	"log"
 	"os"
 	"strings"
 	"sync"
 )
 
-// initParamsFlags .
-func initParamsFlags(modelCmd *cobra.Command) {
+// GenerateModel .
+func generateModel(defaultSelectModel string) {
 
-	//判断是否选定连接 -- 如果选定则使用，若没有选定则使用第一个连接
-	modelCmd.Flags().StringVar(&modelArgs.SelectMySQL, "slm", defaultSelectMysql, "table name prefix")
-
-	if _, ok := (*confOption)[modelArgs.SelectMySQL]; !ok {
-		log.Printf("select mysql not exist")
+	//选择非默认连接信息 进行二次赋值
+	if err := secondInitFlags(&modelArgs, defaultSelectModel); err != nil {
 		return
 	}
 
-	selectMysqlConf := (*confOption)[modelArgs.SelectMySQL]
+	judgeUpdateArgs()
+	//判断mysql连接是否为空参数
+	judgeMysqlDsnIsNull()
+	//sql 获取顺序为： -s > -f > "自动获取"
+	judgeMysqlSqlWithTable()
 
-	modelCmd.Flags().StringVarP(&modelArgs.InputFile, "file", "f", "", "input file")
-	modelCmd.Flags().StringVarP(&modelArgs.OutputPath, "output", "o", selectMysqlConf.OutputPath, "output path")
-	modelCmd.Flags().StringVarP(&modelArgs.SQL, "sql", "s", "", "input SQL")
-	modelCmd.Flags().BoolVarP(&modelArgs.JSONTag, "json", "j", selectMysqlConf.JSONTag, "generate json tag")
-	modelCmd.Flags().StringVar(&modelArgs.TablePrefix, "table-prefix", selectMysqlConf.TablePrefix, "table name prefix")
-	modelCmd.Flags().StringVar(&modelArgs.ColumnPrefix, "col-prefix", "", "column name prefix")
-	modelCmd.Flags().BoolVar(&modelArgs.NoNullType, "no-null", false, "do not use Null type")
-	modelCmd.Flags().StringVar(&modelArgs.NullStyle, "null-style", "",
-		"null type: sql.NullXXX(use 'sql') or *xxx(use 'ptr')")
-	modelCmd.Flags().StringVarP(&modelArgs.Package, "pkg", "p", selectMysqlConf.Package, "package name, default: model")
-	modelCmd.Flags().BoolVar(&modelArgs.GormType, "with-type", selectMysqlConf.GormType, "write type in gorm tag")
-	modelCmd.Flags().BoolVar(&modelArgs.ForceTableName, "with-tablename", true, "write TableName func force")
-	modelCmd.Flags().StringVarP(&modelArgs.MysqlDsn, "db-dsn", "d", selectMysqlConf.MysqlDsn, "mysql dsn([user]:[pass]@tcp(host)/[database][?charset=xxx&...])")
-	modelCmd.Flags().StringVarP(&modelArgs.MysqlTable, "db-table", "t", selectMysqlConf.MysqlTable, "mysql table name")
-	modelCmd.Flags().BoolVarP(&modelArgs.Update, "update", "u", false, "update table struct switch -t/-e")
-	modelCmd.Flags().BoolVarP(&modelArgs.Enforcement, "enforcement", "e", false, "enforcement update all table struct switch -e")
-	modelCmd.Flags().BoolVar(&modelArgs.JudgeUnsigned, "unsigned", false, "Whether to determine an unsigned type")
+	// 获取即将生成的表结构的所有表
+	tables, err := parser.GetCreateTables(modelArgs.MysqlDsn, modelArgs.MysqlTable)
+	if err != nil {
+		exitWithInfo("get tables error: %s", err)
+	}
+
+	// 已存在的表不在更新， 只新增不存在的表， 除非使用 更新命令
+	wg := &sync.WaitGroup{}
+	for _, table := range tables {
+		wg.Add(1)
+		go writeModelFile(table, modelArgs.SQL, wg)
+	}
+
+	wg.Wait()
+	fmt.Printf("%s \n", color.Blue(`success`))
+	return
 }
 
 // getOptions .
@@ -91,33 +89,6 @@ func getOptions(args ModelOptions) []parser.Option {
 		opt = append(opt, parser.WithJudgeUnsigned())
 	}
 	return opt
-}
-
-// GenerateModel .
-func generateModel() {
-
-	judgeUpdateArgs()
-	//判断mysql连接是否为空参数
-	judgeMysqlDsnIsNull()
-	//sql 获取顺序为： -s > -f > "自动获取"
-	judgeMysqlSqlWithTable()
-
-	// 获取即将生成的表结构的所有表
-	tables, err := parser.GetCreateTables(modelArgs.MysqlDsn, modelArgs.MysqlTable)
-	if err != nil {
-		exitWithInfo("get tables error: %s", err)
-	}
-
-	// 已存在的表不在更新， 只新增不存在的表， 除非使用 更新命令
-	wg := &sync.WaitGroup{}
-	for _, table := range tables {
-		wg.Add(1)
-		go writeModelFile(table, modelArgs.SQL, wg)
-	}
-
-	wg.Wait()
-	fmt.Printf("%s \n", color.Blue(`success`))
-	return
 }
 
 // createModelFile 创建model file 在指定目录

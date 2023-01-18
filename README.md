@@ -38,6 +38,7 @@ gmodel:
 var path = "./"
 var name = "gmodel_config"
 var ctype = "yaml"
+var defaultMysql = "default"
 
 func main() {
     rootCmd := &cobra.Command{}
@@ -48,7 +49,7 @@ func main() {
 }
 
 func newGModel() *cobra.Command {
-    gconf, _ := InitGModelConf(WithGModelConfPath(path), WithGModelConfName(name), WithGModelConfType(ctype))
+    gconf, _ := InitGModelConf(WithGModelConfPath(path), WithGModelConfName(name), WithGModelConfType(ctype), WithGModelConfDefaultMysql(defaultMysql))
     return gconf.NewGModelCmd()
 }
 ```
@@ -56,8 +57,8 @@ func newGModel() *cobra.Command {
 You can use follow commands
 
 ```command
-   create all new table model command; use "-slm" specified connection, if not used, default
-   > go run main.go gmodel -slm default
+   create all new table model command; use "--slm" specified connection, if not used, default
+   > go run main.go gmodel --slm default
     
    create a table model command 
    > go run main.go gmodel -t tablename
